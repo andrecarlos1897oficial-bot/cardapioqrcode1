@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Resumo do Pedido{% endblock %}
+
+{% block content %}
+<section class="card card-hero">
+    {% with etapa = 3 %}{% include "_stepper.html" %}{% endwith %}
+
+    <div class="user-strip">
+        <div class="user-strip-info">
+            <span class="user-strip-label">Destino do pedido</span>
+            <strong>Mesa {{ "%02d"|format(mesa|int) }}</strong>
+            <span aria-hidden="true">•</span>
+            <span>{{ cliente }}</span>
+        </div>
+        <a href="{{ url_for('cardapio') }}" class="btn btn-subtle btn-sm">Editar itens</a>
+    </div>
+</section>
+
+<section class="card pedido-resumo-card">
+    <div class="card-header-styled">
+        <h2 class="card-title">Resumo dos itens</h2>
+        <span class="card-count">{{ itens|length }} item(ns)</span>
+    </div>
+
+    <div class="tabela-pedido-wrapper">
+        <table class="tabela-pedido">
+            <thead>
+                <tr>
+                    <th scope="col" class="col-item">Item</th>
+                    <th scope="col" class="col-qtd">Qtd</th>
+                    <th scope="col" class="col-unit">Unitário</th>
+                    <th scope="col" class="col-subtotal">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for it in itens %}
+                <tr>
+                    <td class="col-item" data-label="Item">
+                        <strong>{{ it.nome }}</strong>
+                    </td>
+                    <td class="col-qtd" data-label="Quantidade">{{ it.quantidade }}x</td>
+                    <td class="col-unit" data-label="Unitário">R$ {{ "%.2f"|format(it.preco_unitario)|replace('.', ',') }}</td>
+                    <td class="col-subtotal" data-label="Subtotal">R$ {{ "%.2f"|format(it.subtotal)|replace('.', ',') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="row-total">
+                    <td colspan="3" class="total-label">Total a pagar (cálculo oficial):</td>
+                    <td class="total-valor">R$ {{ "%.2f"|format(total)|replace('.', ',') }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</section>
+
+<section class="card pagamento-card">
+    <div class="card-header-styled">
+        <h2 class="card-title">Forma de pagamento</h2>
+        <span class="card-count">4 opções</span>
+    </div>
+
+    <form action="{{ url_for('confirmar_pedido') }}" method="POST" class="pedido-form">
+        <fieldset class="pagamento-fieldset">
+            <legend class="sr-only">Opções de pagamento</legend>
+
+            <div class="alert-box" role="note">
+                <strong>Vai pagar em dinheiro?</strong>
+                O pedido segue para a cozinha e o acerto é feito com a equipe ao final do atendimento.
+            </div>
+
+            <label class="pagamento-option" for="pg-pix">
+                <input type="radio" id="pg-pix" name="pagamento" value="pix" required>
+                <div class="pagamento-content">
+                    <i class="pagamento-icon fa-solid fa-bolt" aria-hidden="true"></i>
+                    <div class="pagamento-detalhes">
+                        <strong>Pix</strong>
+                        <p>Confira as instruções de pagamento na próxima tela.</p>
+                    </div>
+                </div>
+            </label>
+
+            <label class="pagamento-option" for="pg-credito">
+                <input type="radio" id="pg-credito" name="pagamento" value="credito">
+                <div class="pagamento-content">
+                    <i class="pagamento-icon fa-solid fa-credit-card" aria-hidden="true"></i>
+                    <div class="pagamento-detalhes">
+                        <strong>Cartão de crédito</strong>
+                        <p>A máquina será levada até sua mesa com o pedido.</p>
+                    </div>
+                </div>
+            </label>
+
+            <label class="pagamento-option" for="pg-debito">
+                <input type="radio" id="pg-debito" name="pagamento" value="debito">
+                <div class="pagamento-content">
+                    <i class="pagamento-icon fa-solid fa-credit-card" aria-hidden="true"></i>
+                    <div class="pagamento-detalhes">
+                        <strong>Cartão de débito</strong>
+                        <p>A máquina será levada até sua mesa com o pedido.</p>
+                    </div>
+                </div>
+            </label>
+
+            <label class="pagamento-option" for="pg-dinheiro">
+                <input type="radio" id="pg-dinheiro" name="pagamento" value="dinheiro">
+                <div class="pagamento-content">
+                    <i class="pagamento-icon fa-solid fa-money-bill-wave" aria-hidden="true"></i>
+                    <div class="pagamento-detalhes">
+                        <strong>Dinheiro</strong>
+                        <p>Pague com a equipe ao final do atendimento.</p>
+                    </div>
+                </div>
+            </label>
+        </fieldset>
+
+        <div class="sticky-footer-bar">
+            <div class="container acoes-pedido">
+                <a href="{{ url_for('cardapio') }}" class="btn btn-secondary btn-lg">
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Alterar itens
+                </a>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    Confirmar pedido <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+</section>
+{% endblock %}

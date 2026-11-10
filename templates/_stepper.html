@@ -1,0 +1,38 @@
+{#
+  Stepper compartilhado.
+  Variável esperada: etapa
+    1 = Identificação, 2 = Cardápio, 3 = Pedido, 4 = Confirmação
+    5 = pedido concluído (todas as etapas aparecem como concluídas)
+  Uso: {% with etapa = 2 %}{% include "_stepper.html" %}{% endwith %}
+#}
+<nav class="stepper" aria-label="Progresso do pedido">
+{% for nome, n in [('Identificação', 1), ('Cardápio', 2), ('Pedido', 3), ('Confirmação', 4)] %}
+    {% if n < etapa %}
+        {% set cls = 'step step-done' %}
+    {% elif n == etapa %}
+        {% set cls = 'step step-active' %}
+    {% else %}
+        {% set cls = 'step' %}
+    {% endif %}
+
+    {# Etapas concluídas voltam ao início do fluxo, exceto na confirmação #}
+    {% set link = n < etapa and etapa < 5 and {1: url_for('index'), 2: url_for('cardapio')}.get(n) %}
+
+    {% set miolo %}
+        <span class="step-num" aria-hidden="true">
+            {% if n < etapa %}<i class="fa-solid fa-check"></i>{% else %}{{ n }}{% endif %}
+        </span>
+        <span class="step-label">{{ nome }}</span>
+    {% endset %}
+
+    {% if link %}
+        <a href="{{ link }}" class="{{ cls }}" aria-label="Voltar para {{ nome }}">{{ miolo }}</a>
+    {% else %}
+        <span class="{{ cls }}" {% if n == etapa %}aria-current="step"{% endif %}>{{ miolo }}</span>
+    {% endif %}
+
+    {% if not loop.last %}
+        <span class="step-divider" aria-hidden="true"></span>
+    {% endif %}
+{% endfor %}
+</nav>

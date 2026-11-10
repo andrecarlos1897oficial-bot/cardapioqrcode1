@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Cardápio{% endblock %}
+
+{% block content %}
+<section class="card card-hero">
+    {% with etapa = 2 %}{% include "_stepper.html" %}{% endwith %}
+
+    <div class="user-strip">
+        <div class="user-strip-info">
+            <span class="user-strip-label">Seu atendimento</span>
+            <strong>Mesa {{ "%02d"|format(mesa|int) }}</strong>
+            <span aria-hidden="true">•</span>
+            <span>Olá, {{ cliente }}</span>
+        </div>
+        <form action="{{ url_for('sair') }}" method="POST" class="inline-form">
+            <button type="submit" class="btn btn-subtle btn-sm">Trocar mesa</button>
+        </form>
+    </div>
+</section>
+
+<nav class="category-nav" aria-label="Categorias do cardápio">
+    {% for cat in categorias %}
+    <a class="category-chip" href="#categoria-{{ loop.index }}">{{ cat.categoria }}</a>
+    {% endfor %}
+</nav>
+
+<form action="{{ url_for('pedido') }}" method="POST" class="cardapio-form">
+    {% for cat in categorias %}
+    <section id="categoria-{{ loop.index }}" class="categoria-section" aria-labelledby="cat-{{ loop.index }}">
+        <div class="categoria-header">
+            <h2 id="cat-{{ loop.index }}" class="categoria-title">{{ cat.categoria }}</h2>
+            <span class="categoria-badge">{{ cat.itens|length }} opções</span>
+        </div>
+
+        <div class="itens-grid">
+            {% for item in cat.itens %}
+            <article class="item-card">
+                {% if item.imagem %}
+                <div class="item-image-container">
+                    <img src="{{ url_for('static', filename=item.imagem) }}" alt="{{ item.nome }}" class="item-img">
+                </div>
+                {% else %}
+                <div class="item-placeholder" aria-hidden="true">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                {% endif %}
+
+                <div class="item-info">
+                    <div class="item-header-row">
+                        <h3 class="item-nome">{{ item.nome }}</h3>
+                        <span class="item-preco">R$ {{ "%.2f"|format(item.preco)|replace('.', ',') }}</span>
+                    </div>
+                    <p class="item-descricao">{{ item.descricao }}</p>
+                </div>
+
+                <div class="item-actions">
+                    <label for="qtd-{{ item.id }}" class="item-qty-label">
+                        <span class="sr-only">Quantidade de {{ item.nome }}</span>
+                        <span aria-hidden="true">Quantidade:</span>
+                    </label>
+                    <input
+                        type="number"
+                        id="qtd-{{ item.id }}"
+                        name="qtd_{{ item.id }}"
+                        class="input-qty"
+                        min="0"
+                        max="20"
+                        value="0"
+                        inputmode="numeric"
+                        aria-label="Quantidade de {{ item.nome }}"
+                    >
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endfor %}
+
+    <div class="sticky-footer-bar">
+        <div class="container sticky-footer-inner">
+            <div class="sticky-footer-text">
+                <p class="sticky-footer-title">Pronto para revisar?</p>
+                <small class="sticky-footer-subtitle">Confira seus itens antes de confirmar.</small>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">
+                Revisar pedido <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
+</form>
+{% endblock %}

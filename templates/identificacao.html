@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Identificação{% endblock %}
+
+{% block content %}
+<section class="card card-hero">
+    {% with etapa = 1 %}{% include "_stepper.html" %}{% endwith %}
+
+    <div class="welcome-head">
+        <p class="eyebrow">Restaurante Sabor & Arte</p>
+        <h2 class="section-title">Seja bem-vindo!</h2>
+        <p class="section-description">Como podemos chamar você hoje para uma excelente experiência?</p>
+    </div>
+
+    <form action="{{ url_for('index') }}" method="POST" class="form-flow">
+        {% if mesa and mesa|int >= 1 and mesa|int <= 999 %}
+        <div class="mesa-welcome">
+            <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+            <span>Mesa <strong>{{ "%02d"|format(mesa|int) }}</strong></span>
+            <input type="hidden" name="mesa" value="{{ mesa|int }}">
+        </div>
+        {% else %}
+        <div class="form-group">
+            <label for="campo-mesa" class="form-label">
+                Número da Mesa <span class="required" aria-hidden="true">*</span>
+            </label>
+            <div class="input-with-icon">
+                <i class="input-icon fa-solid fa-location-dot" aria-hidden="true"></i>
+                <input
+                    type="number"
+                    id="campo-mesa"
+                    name="mesa"
+                    class="form-control"
+                    value="{{ mesa or '' }}"
+                    min="1"
+                    max="999"
+                    required
+                    placeholder="Ex.: 12"
+                    autocomplete="off"
+                >
+            </div>
+            <small class="form-help">
+                <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                Identificado via QR Code ou preenchimento manual.
+            </small>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="campo-nome" class="form-label">
+                Seu nome <span class="required" aria-hidden="true">*</span>
+            </label>
+            <div class="input-with-icon">
+                <i class="input-icon fa-solid fa-user" aria-hidden="true"></i>
+                <input
+                    type="text"
+                    id="campo-nome"
+                    name="nome"
+                    class="form-control"
+                    value="{{ nome or '' }}"
+                    minlength="2"
+                    maxlength="60"
+                    required
+                    placeholder="Como prefere ser chamado?"
+                    autocomplete="name"
+                >
+            </div>
+            <small class="form-help">
+                <i class="fa-solid fa-bell-concierge" aria-hidden="true"></i>
+                Usado pelos garçons na entrega dos pratos.
+            </small>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-block btn-lg">
+                Acessar cardápio <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </button>
+        </div>
+    </form>
+
+    <p class="privacy-note">
+        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+        Seus dados são preservados apenas para a duração da sua experiência na mesa.
+    </p>
+</section>
+{% endblock %}

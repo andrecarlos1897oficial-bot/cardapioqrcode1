@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Pedido Confirmado{% endblock %}
+
+{% block content %}
+<section class="card card-hero">
+    {% with etapa = 5 %}{% include "_stepper.html" %}{% endwith %}
+
+    <div class="status-banner">
+        <div class="status-icon" aria-hidden="true">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <h2 class="status-title">Pedido recebido com sucesso!</h2>
+        <p class="status-subtitle">
+            A cozinha já iniciou a preparação dos seus itens para a <strong>Mesa {{ mesa }}</strong>.
+        </p>
+    </div>
+</section>
+
+{% if metodo == 'dinheiro' %}
+<section class="card aviso-pagamento aviso-dinheiro">
+    <div class="aviso-header">
+        <span class="aviso-icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span>
+        <div>
+            <h3 class="aviso-title">Pagamento em dinheiro</h3>
+            <p class="aviso-text">
+                <strong>Pagamento pendente no balcão ou ao final do atendimento.</strong>
+            </p>
+        </div>
+    </div>
+    <p class="aviso-detalhe">
+        Você pode efetuar o pagamento diretamente no caixa ao final de sua refeição ou solicitar o fechamento da conta para um de nossos garçons.
+    </p>
+</section>
+{% elif metodo == 'pix' %}
+<section class="card aviso-pagamento aviso-pix">
+    <div class="aviso-header">
+        <span class="aviso-icon" aria-hidden="true"><i class="fa-solid fa-bolt"></i></span>
+        <div>
+            <h3 class="aviso-title">Pagamento via Pix</h3>
+            <p class="aviso-text">Status: <strong>Aguardando confirmação do Pix</strong></p>
+        </div>
+    </div>
+    <div class="pix-box">
+        <p class="pix-instrucao">
+            O Pix ainda não está configurado para este restaurante. Antes de pagar, solicite à equipe a chave oficial e confirme o valor do pedido.
+        </p>
+    </div>
+</section>
+{% elif metodo == 'credito' %}
+<section class="card aviso-pagamento aviso-cartao">
+    <div class="aviso-header">
+        <span class="aviso-icon" aria-hidden="true"><i class="fa-solid fa-credit-card"></i></span>
+        <div>
+            <h3 class="aviso-title">Cartão de crédito</h3>
+            <p class="aviso-text">Status: <strong>Pedido confirmado</strong></p>
+        </div>
+    </div>
+    <p class="aviso-detalhe">
+        A maquininha de cartão de crédito será levada até a <strong>Mesa {{ mesa }}</strong> junto com a entrega dos seus pratos ou no encerramento da conta.
+    </p>
+</section>
+{% elif metodo == 'debito' %}
+<section class="card aviso-pagamento aviso-cartao">
+    <div class="aviso-header">
+        <span class="aviso-icon" aria-hidden="true"><i class="fa-solid fa-credit-card"></i></span>
+        <div>
+            <h3 class="aviso-title">Cartão de débito</h3>
+            <p class="aviso-text">Status: <strong>Pedido confirmado</strong></p>
+        </div>
+    </div>
+    <p class="aviso-detalhe">
+        A maquininha de cartão de débito será levada até a <strong>Mesa {{ mesa }}</strong> junto com a entrega dos seus pratos ou no encerramento da conta.
+    </p>
+</section>
+{% endif %}
+
+<section class="card pedido-resumo-card">
+    <div class="card-header-styled">
+        <h3 class="card-title">Comprovante do pedido</h3>
+        <span class="badge badge-mesa">Mesa {{ mesa }}</span>
+    </div>
+
+    <div class="comprovante-meta">
+        <p><strong>Cliente:</strong> {{ cliente }}</p>
+        <p><strong>Forma de pagamento:</strong> {{ metodo_nome }}</p>
+    </div>
+
+    <div class="tabela-pedido-wrapper">
+        <table class="tabela-pedido">
+            <thead>
+                <tr>
+                    <th scope="col" class="col-item">Item</th>
+                    <th scope="col" class="col-qtd">Qtd</th>
+                    <th scope="col" class="col-subtotal">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for it in itens %}
+                <tr>
+                    <td class="col-item" data-label="Item">{{ it.nome }}</td>
+                    <td class="col-qtd" data-label="Quantidade">{{ it.quantidade }}x</td>
+                    <td class="col-subtotal" data-label="Subtotal">R$ {{ "%.2f"|format(it.subtotal)|replace('.', ',') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="row-total">
+                    <td colspan="2" class="total-label">Total do pedido:</td>
+                    <td class="total-valor">R$ {{ "%.2f"|format(total)|replace('.', ',') }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</section>
+
+<div class="pos-confirmacao-actions">
+    <form action="{{ url_for('novo_pedido') }}" method="POST" class="inline-form">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i> Fazer outro pedido (Mesa {{ mesa }})
+        </button>
+    </form>
+
+    <form action="{{ url_for('sair') }}" method="POST" class="inline-form">
+        <button type="submit" class="btn btn-secondary btn-lg">
+            <i class="fa-solid fa-door-open" aria-hidden="true"></i> Encerrar sessão
+        </button>
+    </form>
+</div>
+{% endblock %}

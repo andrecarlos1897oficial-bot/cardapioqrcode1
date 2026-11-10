@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cardápio Digital{% endblock %} — Sabor & Arte</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <a class="skip-link" href="#conteudo-principal">Pular para o conteúdo</a>
+
+    <header class="app-header">
+        <div class="container header-content">
+            <div class="brand">
+                <div class="brand-icon" aria-hidden="true">
+                    <img src="{{ url_for('static', filename='cardapio-png/logo-hamburgeria.png') }}" alt="Logo Hamburgueria" class="brand-logo-img">
+                </div>
+                <div class="brand-text">
+                    <h1 class="brand-title">Sabor & Arte</h1>
+                    <span class="brand-subtitle">High Gastronomy</span>
+                </div>
+            </div>
+
+            <div class="header-right">
+                {% if session.get('mesa') %}
+                <div class="header-badges">
+                    <span class="badge badge-mesa">Mesa {{ session.get('mesa') }}</span>
+                    {% if session.get('cliente') %}
+                    <span class="badge badge-cliente">{{ session.get('cliente') }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="header-meta">
+                    <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                    <span>Cardápio Digital por QR Code</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main id="conteudo-principal" class="container main-content" tabindex="-1">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <section class="alerts-container" aria-label="Avisos do sistema">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </section>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="app-footer">
+        <div class="container footer-content">
+            <p>© 2026 Restaurante Sabor & Arte • Haute Cuisine</p>
+            <p class="footer-note">Ambiente seguro com validação rigorosa de pedidos no servidor.</p>
+        </div>
+    </footer>
+</body>
+</html>
