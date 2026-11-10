@@ -1,5 +1,4 @@
 import os
-import re
 from pathlib import Path
 from flask import (
     Flask,
@@ -85,7 +84,7 @@ CARDAPIO = [
             },
             {
                 "id": "prato_4",
-                "nome": " Batatas Fritas com Queijo Cheddar e Bacon",
+                "nome": "Batatas Fritas com Queijo Cheddar e Bacon",
                 "descricao": "Batatas fritas crocantes com queijo cheddar derretido e pedaços de bacon crocante.",
                 "preco": 15.00,
                 "imagem": "cardapio-png/Batatas-Fritas-com-Queijo-Cheddar-e-Bacon.png",
@@ -104,7 +103,7 @@ CARDAPIO = [
             },
             {
                 "id": "beb_2",
-                "nome": "Long Neck Cerveja Stout  Malzbier (330ml)",
+                "nome": "Long Neck Cerveja Stout Malzbier (330ml)",
                 "descricao": "Cerveja escura com notas tostadas de café e chocolate amargo. (330ml)",
                 "preco": 16.50,
                 "imagem": "cardapio-png/Long-Neck-Cerveja-Stout-Malzbier.png",
@@ -149,7 +148,7 @@ CARDAPIO = [
                 "preco": 28.50,
                 "imagem": "cardapio-png/Mini-Churros.png",
             },
-              ],
+        ],
     },
 ]
 
@@ -229,7 +228,7 @@ def validar_quantidades_pedido(formulario):
 
 
 def limpar_dados_pedido():
-    """Remove do cookie os dados de um pedido anterior."""
+    """Remove da sessão os dados de um pedido anterior."""
     for chave in (
         "pedido_itens",
         "pedido_total",
@@ -242,6 +241,13 @@ def limpar_dados_pedido():
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    """Tela de identificação (mesa e nome).
+
+    - GET sem ?mesa=: mostra a mesa e o nome já guardados na sessão.
+    - GET com ?mesa=N (QR Code): só sugere a mesa N no campo. Não grava nada,
+      então o cliente pode digitar outro número.
+    - POST: grava mesa e nome na sessão e segue para o cardápio.
+    """
     if request.method == "POST":
         mesa_post = request.form.get("mesa", "")
         nome_post = request.form.get("nome", "")
@@ -255,30 +261,28 @@ def index():
 
         if len(nome_sanitizado) < 2:
             flash("Por favor, informe seu nome (mínimo de 2 caracteres).", "error")
-            return render_template("identificacao.html", mesa=mesa_valida, nome=nome_post)
+            return render_template("identificacao.html", mesa=mesa_post, nome=nome_post)
 
-        # Registra mesa e cliente na sessão
         session["mesa"] = mesa_valida
         session["cliente"] = nome_sanitizado
         return redirect(url_for("cardapio"))
 
-    # Método GET: verifica se veio parâmetro ?mesa=<numero>
+    # GET
+    mesa_sugerida = session.get("mesa", "")
     mesa_param = request.args.get("mesa")
-    mesa_sugerida = ""
+
     if mesa_param is not None:
-        mesa_val = validar_numero_mesa(mesa_param)
-        if mesa_val:
-            mesa_sugerida = mesa_val
-            session["mesa"] = mesa_val
-            # Limpa o nome anterior quando vem nova mesa via QR Code
-            session.pop("cliente", None)
+        mesa_qr = validar_numero_mesa(mesa_param)
+        if mesa_qr:
+            mesa_sugerida = mesa_qr
         else:
             flash("O número de mesa no link QR Code é inválido. Por favor, confirme abaixo.", "warning")
-    elif "mesa" in session:
-        mesa_sugerida = session["mesa"]
 
-    nome_sugerido = session.get("cliente", "")
-    return render_template("identificacao.html", mesa=mesa_sugerida, nome=nome_sugerido)
+    return render_template(
+        "identificacao.html",
+        mesa=mesa_sugerida,
+        nome=session.get("cliente", ""),
+    )
 
 
 @app.route("/cardapio", methods=["GET"])
@@ -426,7 +430,7 @@ def confirmacao():
 
 @app.route("/novo-pedido", methods=["POST"])
 def novo_pedido():
-    # Limpa apenas os dados do pedido, mantendo mesa e cliente se desejado
+    # Limpa apenas os dados do pedido, mantendo mesa e cliente
     limpar_dados_pedido()
     flash("Novo pedido iniciado para a mesa.", "info")
     return redirect(url_for("cardapio"))
