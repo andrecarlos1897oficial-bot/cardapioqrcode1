@@ -13,13 +13,6 @@
     </div>
 
     <form action="{{ url_for('index') }}" method="POST" class="form-flow">
-        {% if mesa and mesa|int >= 1 and mesa|int <= 999 %}
-        <div class="mesa-welcome">
-            <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-            <span>Mesa <strong>{{ "%02d"|format(mesa|int) }}</strong></span>
-            <input type="hidden" name="mesa" value="{{ mesa|int }}">
-        </div>
-        {% else %}
         <div class="form-group">
             <label for="campo-mesa" class="form-label">
                 Número da Mesa <span class="required" aria-hidden="true">*</span>
@@ -44,7 +37,6 @@
                 Identificado via QR Code ou preenchimento manual.
             </small>
         </div>
-        {% endif %}
 
         <div class="form-group">
             <label for="campo-nome" class="form-label">
