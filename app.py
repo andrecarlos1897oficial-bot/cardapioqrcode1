@@ -270,6 +270,8 @@ def index():
         if mesa_val:
             mesa_sugerida = mesa_val
             session["mesa"] = mesa_val
+            # Limpa o nome anterior quando vem nova mesa via QR Code
+            session.pop("cliente", None)
         else:
             flash("O número de mesa no link QR Code é inválido. Por favor, confirme abaixo.", "warning")
     elif "mesa" in session:
