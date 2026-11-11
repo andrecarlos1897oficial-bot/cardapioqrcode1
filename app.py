@@ -21,6 +21,8 @@ app = Flask(
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY") or os.urandom(32)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+# Na Vercel o site roda em HTTPS, então o cookie só trafega de forma segura
+app.config["SESSION_COOKIE_SECURE"] = bool(os.environ.get("VERCEL"))
 app.config["TEMPLATES_AUTO_RELOAD"] = os.environ.get("FLASK_ENV") == "development"
 
 # Catálogo canônico gerenciado exclusivamente no servidor para prevenir manipulação de preços
@@ -165,8 +167,8 @@ LIMITE_QUANTIDADE_ITEM = 20
 def add_security_headers(response):
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "style-src 'self' https://fonts.googleapis.com; "
-        "font-src 'self' https://fonts.gstatic.com; "
+        "style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
+        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
         "img-src 'self' data:; "
         "script-src 'none'; "
         "object-src 'none'; "
@@ -230,13 +232,45 @@ def validar_quantidades_pedido(formulario):
 def limpar_dados_pedido():
     """Remove da sessão os dados de um pedido anterior."""
     for chave in (
-        "pedido_itens",
-        "pedido_total",
+        "pedido_qtd",
         "pagamento_escolhido",
         "pagamento_nome",
         "pedido_confirmado",
     ):
         session.pop(chave, None)
+
+
+def montar_pedido(quantidades):
+    """Monta os itens e o total a partir das quantidades, usando os preços do servidor."""
+    itens = []
+    total_centavos = 0
+    for item_id, item_dados in ITENS_MAP.items():
+        qtd = quantidades.get(item_id, 0)
+        if qtd <= 0:
+            continue
+        preco_cent = round(item_dados["preco"] * 100)
+        subtotal_cent = preco_cent * qtd
+        total_centavos += subtotal_cent
+        itens.append({
+            "id": item_id,
+            "nome": item_dados["nome"],
+            "descricao": item_dados["descricao"],
+            "preco_unitario": item_dados["preco"],
+            "quantidade": qtd,
+            "subtotal": subtotal_cent / 100.0,
+        })
+    return itens, total_centavos / 100.0
+
+
+def obter_pedido():
+    """Reconstrói o pedido a partir das quantidades guardadas na sessão."""
+    qtds = session.get("pedido_qtd")
+    if not qtds:
+        return None, None
+    itens, total = montar_pedido(qtds)
+    if not itens:
+        return None, None
+    return itens, total
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -323,42 +357,18 @@ def pedido():
             )
             return redirect(url_for("cardapio"))
 
-        itens_selecionados = []
-        total_centavos = 0
-
-        for item_id, item_dados in ITENS_MAP.items():
-            qtd = quantidades.get(item_id, 0)
-
-            if qtd > 0:
-                # Preço canônico vem estritamente do dicionário do servidor
-                preco_unitario = item_dados["preco"]
-                preco_unit_cent = round(preco_unitario * 100)
-                subtotal_cent = preco_unit_cent * qtd
-                total_centavos += subtotal_cent
-
-                itens_selecionados.append({
-                    "id": item_id,
-                    "nome": item_dados["nome"],
-                    "descricao": item_dados["descricao"],
-                    "preco_unitario": preco_unitario,
-                    "quantidade": qtd,
-                    "subtotal": subtotal_cent / 100.0,
-                })
-
-        if not itens_selecionados:
+        qtds_validas = {k: v for k, v in quantidades.items() if v > 0}
+        if not qtds_validas:
             flash("Selecione a quantidade de pelo menos um item para montar seu pedido.", "warning")
             return redirect(url_for("cardapio"))
 
-        # Salva dados do pedido na sessão
-        session["pedido_itens"] = itens_selecionados
-        session["pedido_total"] = total_centavos / 100.0
+        # Guarda apenas as quantidades, para o cookie de sessão ficar pequeno
+        session["pedido_qtd"] = qtds_validas
         return redirect(url_for("pedido"))
 
-    # Método GET
-    itens_pedido = session.get("pedido_itens")
-    total_pedido = session.get("pedido_total")
-
-    if not itens_pedido or total_pedido is None:
+    # Método GET: reconstrói o pedido com os preços atuais do servidor
+    itens_pedido, total_pedido = obter_pedido()
+    if not itens_pedido:
         flash("Você ainda não selecionou itens para o pedido.", "info")
         return redirect(url_for("cardapio"))
 
@@ -375,10 +385,9 @@ def pedido():
 def confirmar_pedido():
     mesa = session.get("mesa")
     cliente = session.get("cliente")
-    itens_pedido = session.get("pedido_itens")
-    total_pedido = session.get("pedido_total")
+    itens_pedido, total_pedido = obter_pedido()
 
-    if not mesa or not cliente or not itens_pedido or total_pedido is None:
+    if not mesa or not cliente or not itens_pedido:
         flash("Sessão expirada ou pedido não encontrado. Por favor, reinicie.", "error")
         return redirect(url_for("index"))
 
@@ -407,13 +416,12 @@ def confirmar_pedido():
 def confirmacao():
     mesa = session.get("mesa")
     cliente = session.get("cliente")
-    itens_pedido = session.get("pedido_itens")
-    total_pedido = session.get("pedido_total")
+    itens_pedido, total_pedido = obter_pedido()
     metodo = session.get("pagamento_escolhido")
     metodo_nome = session.get("pagamento_nome")
     confirmado = session.get("pedido_confirmado")
 
-    if not (mesa and cliente and itens_pedido and total_pedido is not None and metodo and confirmado):
+    if not (mesa and cliente and itens_pedido and metodo and confirmado):
         flash("Nenhum pedido confirmado encontrado.", "info")
         return redirect(url_for("index"))
 
