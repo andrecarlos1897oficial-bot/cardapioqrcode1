@@ -10,3 +10,5 @@ services:
         value: production
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: FLASK_SECRET_KEY
+        value: 88446b569eca5dc968093d4e952b389712af9fcb9bf20b9868424300cee0dd10
